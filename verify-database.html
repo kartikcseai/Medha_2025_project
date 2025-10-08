@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Verification</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 20px; margin: 10px 0; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Supabase Database Verification</h1>
+    <p>This page will test your Supabase connection and verify the patient_records table exists.</p>
+    
+    <button onclick="testConnection()">Test Database Connection</button>
+    <button onclick="testTableStructure()">Test Table Structure</button>
+    <button onclick="testInsert()">Test Insert Operation</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const supabaseUrl = 'https://xyqjesnnhqdzgcsdswgk.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5cWplc25uaHFkemdjc2Rzd2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NTMwMzEsImV4cCI6MjA3NTQyOTAzMX0._PM5ESPYVrAkWW7fIHxq5d4xuab9EKB1M_Jka51xuBc';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            results.appendChild(div);
+        }
+        
+        async function testConnection() {
+            log('Testing Supabase connection...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('patient_records')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    log(`Connection failed: ${error.message}`, 'error');
+                    if (error.code === 'PGRST205') {
+                        log('Table "patient_records" does not exist. Please create it first using the SQL script.', 'error');
+                    }
+                } else {
+                    log('Connection successful!', 'success');
+                    log(`Found ${data.length} records in the table.`, 'success');
+                }
+            } catch (err) {
+                log(`Test failed: ${err.message}`, 'error');
+            }
+        }
+        
+        async function testTableStructure() {
+            log('Testing table structure...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('patient_records')
+                    .select('*')
+                    .limit(0);
+                
+                if (error) {
+                    log(`Table structure test failed: ${error.message}`, 'error');
+                } else {
+                    log('Table structure is accessible!', 'success');
+                }
+            } catch (err) {
+                log(`Table structure test failed: ${err.message}`, 'error');
+            }
+        }
+        
+        async function testInsert() {
+            log('Testing insert operation...', 'info');
+            try {
+                const testData = {
+                    child_name: 'Test Patient',
+                    gender: 'Male',
+                    age_years: 5,
+                    weight_kg: 20,
+                    drug_name: 'Test Drug',
+                    dose_range: '10-20mg',
+                    recommendation: '5ml every 8 hours',
+                    frequency: '3 times daily',
+                    duration: '5 days',
+                    analysis_notes: 'Test analysis notes'
+                };
+                
+                const { data, error } = await supabase
+                    .from('patient_records')
+                    .insert([testData])
+                    .select();
+                
+                if (error) {
+                    log(`Insert test failed: ${error.message}`, 'error');
+                } else {
+                    log('Insert test successful!', 'success');
+                    log(`Created record with ID: ${data[0].id}`, 'success');
+                    
+                    // Clean up test record
+                    await supabase
+                        .from('patient_records')
+                        .delete()
+                        .eq('id', data[0].id);
+                    log('Test record cleaned up.', 'info');
+                }
+            } catch (err) {
+                log(`Insert test failed: ${err.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
