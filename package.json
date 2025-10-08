@@ -1,3 +1,9 @@
+"scripts": {
+  "prebuild": "chmod +x node_modules/.bin/vite || true",
+  "build": "vite build",
+  ...other scripts...
+}
+
 {
       "name": "Healthcare Web App UI Design",
       "version": "0.1.0",
